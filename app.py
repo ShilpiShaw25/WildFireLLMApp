@@ -29,25 +29,34 @@ def get_weather_data(url: str):
     response = getattr(r,'_content').decode("utf-8")
     response = json.loads(response)
     weather_data = response.get("weather", None)
-    # create a dictionary of data
-    weather_dict = {}
-    if weather_data:
-        weather_dict["weather_condition"] = weather_data[0]["main"]
-    else:
-        weather_dict["weather_condition"] = "not available"
-    weather_dict["temp"] = response["main"]["temp"]
-    weather_dict["temp_feel"] = response["main"]["feels_like"]
-    weather_dict["temp_min"] = response["main"]["temp_min"]
-    weather_dict["temp_max"] = response["main"]["temp_max"]
-    weather_dict["pressure"] = response["main"]["pressure"]
-    weather_dict["humidity"] = response["main"]["humidity"]
-    weather_dict["sea_level"] = response["main"]["sea_level"]
-    weather_dict["ground_level"] = response["main"]["grnd_level"]
-    weather_dict["visibility"] = response["visibility"]
-    weather_dict["wind_speed"] = response["wind"]["speed"]
-    weather_dict["wind_deg"] = response["wind"]["deg"]
+    try:
+        main_data = response["main"]
+        wind_data = response["wind"]
+        cloud_data = response["clouds"]
+        # create a dictionary of data
+        weather_dict = {}
+        if weather_data:
+            weather_dict["weather_condition"] = weather_data[0]["main"]
+        else:
+            weather_dict["weather_condition"] = "not available"
+        weather_dict["temp"] = response["main"]["temp"]
+        weather_dict["temp_feel"] = response["main"]["feels_like"]
+        weather_dict["temp_min"] = response["main"]["temp_min"]
+        weather_dict["temp_max"] = response["main"]["temp_max"]
+        weather_dict["pressure"] = response["main"]["pressure"]
+        weather_dict["humidity"] = response["main"]["humidity"]
+        weather_dict["sea_level"] = response["main"]["sea_level"]
+        weather_dict["ground_level"] = response["main"]["grnd_level"]
+        weather_dict["visibility"] = response["visibility"]
+        weather_dict["wind_speed"] = response["wind"]["speed"]
+        weather_dict["wind_deg"] = response["wind"]["deg"]
+    except Exception as error:
+        weather_dict = None
+        main_data = None
+        wind_data = None
+        cloud_data = None
 
-    return response["main"], response["wind"], response["clouds"], weather_data, weather_dict
+    return main_data, wind_data, cloud_data, weather_data, weather_dict
 
 # set a title
 st.title("Wild Fire Prediction")
@@ -74,6 +83,9 @@ if country:
         weather_url = create_url(COUNTRY_CODES[country], city_name)
         # get weather data
         main_data, wind_data, cloud_data, weather_data, dict_weather_data = get_weather_data(weather_url)
+        if not dict_weather_data:
+            st.error("Check the City Name: Cannot fetch weather data", icon = "🛑")
+            st.stop()
         st.write(dict_weather_data)
         dict_weather_data["city"] = city_name
         with st.sidebar:
